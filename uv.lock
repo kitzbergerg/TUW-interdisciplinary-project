@@ -842,6 +842,7 @@ dependencies = [
     { name = "nibabel" },
     { name = "numpy" },
     { name = "scipy" },
+    { name = "simpleitk" },
     { name = "totalsegmentator" },
 ]
 
@@ -852,6 +853,7 @@ requires-dist = [
     { name = "nibabel", specifier = ">=5.3.2" },
     { name = "numpy", specifier = ">=2.3.3" },
     { name = "scipy", specifier = ">=1.16.2" },
+    { name = "simpleitk", specifier = ">=2.5.2" },
     { name = "totalsegmentator", specifier = ">=2.11.0" },
 ]
 

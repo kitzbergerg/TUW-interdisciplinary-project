@@ -5,16 +5,9 @@ import argparse
 import os
 
 
-def view_nii_slice(file_path, output_path, slice_index=None, axis=2):
+def view_nii_slice(file_path, output_path, slice_index, axis):
     """
     Displays a 2D slice of a 3D NIfTI file.
-
-    Args:
-        file_path (str): The path to the .nii or .nii.gz file.
-        slice_index (int, optional): The index of the slice to display.
-                                     If None, the middle slice is shown.
-        axis (int, optional): The axis from which to take the slice (0, 1, or 2).
-                              Defaults to 2 (axial view).
     """
     # Check if the file exists
     if not os.path.exists(file_path):

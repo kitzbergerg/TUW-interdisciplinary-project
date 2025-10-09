@@ -1,34 +1,48 @@
-import nibabel as nib
+import SimpleITK as sitk
 import argparse
-from scipy.ndimage import gaussian_filter, zoom
+from scipy.ndimage import gaussian_filter
 
+def refine(mask_path, output_path, zoom_factor):
+    # --- Step 1: Load the image using SimpleITK ---
+    itk_image = sitk.ReadImage(mask_path, sitk.sitkFloat32)
 
-def upsample_segmentation(image_data, zoom_factor):
-    hr_seg_data = zoom(
-        image_data,
-        zoom_factor,
-        order=0,
-        mode='nearest'
-    )
+    # --- Step 2: Get original properties and calculate new ones ---
+    original_spacing = itk_image.GetSpacing()
+    original_size = itk_image.GetSize()
 
-    return hr_seg_data
+    # Calculate the new spacing and size
+    new_spacing = [s / zoom_factor for s in original_spacing]
+    new_size = [int(round(s * zoom_factor)) for s in original_size]
 
+    # --- Step 3: Resample using SimpleITK ---
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetOutputSpacing(new_spacing)
+    resampler.SetSize(new_size)
+    resampler.SetOutputDirection(itk_image.GetDirection())
+    resampler.SetOutputOrigin(itk_image.GetOrigin())
+    resampler.SetTransform(sitk.Transform())
+    resampler.SetDefaultPixelValue(0)
+    # Use Nearest Neighbor for segmentation masks to avoid creating new values
+    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
 
-def refine(file_path, output_path, zoom_factor):
-    nifti_file = nib.load(file_path)
-    image_data = nifti_file.get_fdata()
-    upsampled = upsample_segmentation(image_data, zoom_factor)
+    # Execute the resampling
+    hr_blocky_itk_image = resampler.Execute(itk_image)
 
-    blurred = gaussian_filter(upsampled, sigma=zoom_factor * 1.5)
+    # --- Step 4: Convert to NumPy for Smoothing ---
+    hr_blocky_data = sitk.GetArrayFromImage(hr_blocky_itk_image)
+
+    # --- Step 5: Apply your smoothing logic ---
+    blurred = gaussian_filter(hr_blocky_data, sigma=zoom_factor * 1.5)
     blurred[blurred < 0.5] = 0
     blurred[blurred >= 0.5] = 1
 
-    hr_affine = nifti_file.affine.copy()
-    for i in range(3):
-        hr_affine[i, i] /= zoom_factor
+    # --- Step 6: Convert back to SimpleITK image to save correctly ---
+    final_itk_image = sitk.GetImageFromArray(blurred)
+    # Copy all the correct geometric information from the resampled image
+    final_itk_image.CopyInformation(hr_blocky_itk_image)
 
-    refined_nii = nib.Nifti1Image(blurred, hr_affine, header=nifti_file.header)
-    nib.save(refined_nii, output_path)
+    # Save the final result
+    sitk.WriteImage(final_itk_image, output_path)
     print(f"✅ Refined segmentation saved to: {output_path}")
 
 

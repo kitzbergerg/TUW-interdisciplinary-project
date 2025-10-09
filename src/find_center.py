@@ -4,11 +4,9 @@ import argparse
 import os
 
 
-def find_nii_center_or_corners(file_path):
+def find_nii_center(file_path):
     """
-    Finds the bounding box of non-zero voxels in a NIfTI file,
-    checks if the center is non-zero, and prints either the center
-    or the 8 corner coordinates of the box.
+    Finds the bounding box of non-zero voxels in a NIfTI file and prints the center of the box.
 
     Args:
         file_path (str): The path to the .nii or .nii.gz file.
@@ -65,4 +63,4 @@ if __name__ == '__main__':
     parser.add_argument('file_path', type=str, help='Path to the .nii or .nii.gz file.')
     args = parser.parse_args()
 
-    find_nii_center_or_corners(args.file_path)
+    find_nii_center(args.file_path)
