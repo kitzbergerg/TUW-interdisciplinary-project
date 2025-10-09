@@ -65,3 +65,10 @@ python src/view_nii.py out/upscale_HFValid_femur_2x.nii.gz out/test.png --slice 
 ```
 
 You can also use [3D Slicer](https://www.slicer.org/) to view the nii files directly.
+
+## Comparison
+
+To compare segmentations you can use the SlicerRT extension for 3D Slicer.  
+Using the Segment Comparison model you can compute the Dice Similarity.
+
+TODO: to the same in code
