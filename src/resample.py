@@ -1,5 +1,6 @@
 import argparse
 import SimpleITK as sitk
+import numpy as np
 
 
 def resample_data(itk_image, zoom_factor):
@@ -17,7 +18,7 @@ def resample_data(itk_image, zoom_factor):
     resampler.SetSize(new_size)
     resampler.SetOutputOrigin(itk_image.GetOrigin())
 
-    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+    resampler.SetInterpolator(sitk.sitkLinear)  # nearest neighbor doesn't work since it shifts pixels
     resampler.SetDefaultPixelValue(0)
     resampler.SetOutputDirection(itk_image.GetDirection())
 
@@ -34,6 +35,8 @@ def resample(input_file, output_file, zoom_factor):
     # Resample image
     resampled_itk_image = resample_data(itk_image, zoom_factor)
     resampled_data = sitk.GetArrayFromImage(resampled_itk_image)
+    resampled_data[resampled_data <= 0.5] = 0
+    resampled_data[resampled_data > 0.5] = 1
 
     # Convert back to SimpleITK image
     final_itk_image = sitk.GetImageFromArray(resampled_data)

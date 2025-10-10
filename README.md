@@ -76,4 +76,15 @@ You can also use [3D Slicer](https://www.slicer.org/) to view the nii files dire
 To compare segmentations you can use the SlicerRT extension for 3D Slicer.  
 Using the Segment Comparison model you can compute the Dice Similarity.
 
-TODO: to the same in code
+In code, you can do the following.  
+Note that the stl->nifti conversion uses voxel spacing 0.5 by default.
+
+```sh
+python src/compare.py data/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl out/label_high_res.nii.gz out/label_low_res.nii.gz out/upsampled.nii.gz out/smoothed.nii.gz
+```
+
+For more detail you can use '-v 0.3' to change spacing:
+
+```sh
+python src/compare.py data/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl out/label_high_res.nii.gz out/label_low_res.nii.gz out/upsampled.nii.gz out/smoothed.nii.gz -v 0.3
+```

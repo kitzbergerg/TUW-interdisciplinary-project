@@ -10,8 +10,8 @@ def refine(input_file, output_file, kernel_size):
 
     # Apply gaussian smoothing
     blurred = gaussian_filter(itk_image_data, sigma=kernel_size)
-    blurred[blurred < 0.5] = 0
-    blurred[blurred >= 0.5] = 1
+    blurred[blurred <= 0.5] = 0
+    blurred[blurred > 0.5] = 1
 
     # Convert back to SimpleITK image
     final_itk_image = sitk.GetImageFromArray(blurred)
