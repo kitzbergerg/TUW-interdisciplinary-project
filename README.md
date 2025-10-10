@@ -44,13 +44,18 @@ python src/conversion.py data/HFValid_Collection_v3/Subjects/Pat001/Pat001.nrrd 
 TotalSegmentator -i data/HFValid_Collection_v3/Subjects/Pat001/ct.nii.gz -o segmentations/HFValid/001 -p
 ```
 
-## Refine & View data
+## Refine
 
 Refine the data (e.g. using smoothing):
 
 ```sh
-python src/refining/smoothing.py segmentations/HFValid/001/femur_right.nii.gz out/upscale_HFValid_femur_2x.nii.gz -z 2
+python src/conversion.py data/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl out/label_high_res.nii.gz -v 0.5
+python src/conversion.py data/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl out/label_low_res.nii.gz -v 1.0
+python src/resample.py out/label_low_res.nii.gz out/upsampled.nii.gz -z 2
+python src/refining/smoothing.py out/upsampled.nii.gz out/smoothed.nii.gz -s 3
 ```
+
+## View data
 
 Find the center of the segmentation:
 

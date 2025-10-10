@@ -844,6 +844,7 @@ dependencies = [
     { name = "scipy" },
     { name = "simpleitk" },
     { name = "totalsegmentator" },
+    { name = "trimesh" },
 ]
 
 [package.metadata]
@@ -855,6 +856,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.16.2" },
     { name = "simpleitk", specifier = ">=2.5.2" },
     { name = "totalsegmentator", specifier = ">=2.11.0" },
+    { name = "trimesh", specifier = ">=4.8.3" },
 ]
 
 [[package]]
@@ -2517,6 +2519,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/eb/7f/e20ba11390bdfc55117c8c6070838ec914e6f0053a602390a598057884eb/traceback2-1.4.0.tar.gz", hash = "sha256:05acc67a09980c2ecfedd3423f7ae0104839eccb55fc645773e1caa0951c3030", size = 15872, upload-time = "2015-03-09T06:57:27.525Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/17/0a/6ac05a3723017a967193456a2efa0aa9ac4b51456891af1e2353bb9de21e/traceback2-1.4.0-py2.py3-none-any.whl", hash = "sha256:8253cebec4b19094d67cc5ed5af99bf1dba1285292226e98a31929f87a5d6b23", size = 16793, upload-time = "2015-03-09T06:57:35.15Z" },
+]
+
+[[package]]
+name = "trimesh"
+version = "4.8.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/17/9799bd734de0aa75332727b10ecf56e2c93efa70dfc7a2966bed33539ef5/trimesh-4.8.3.tar.gz", hash = "sha256:d2a1974efccb0737a1faac14d69740c644bb6738a99c790c1df752fe72c2a759", size = 831222, upload-time = "2025-09-26T20:07:59.595Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/bc/f36afd1ad03d09cd0d311be5951f2dd705a824f34dd871779d42c277d741/trimesh-4.8.3-py3-none-any.whl", hash = "sha256:f9f1622ecac5f3bed5b65d3a748bb536481f52cd4e4e120e0b637cabe6cf1542", size = 735464, upload-time = "2025-09-26T20:07:56.512Z" },
 ]
 
 [[package]]

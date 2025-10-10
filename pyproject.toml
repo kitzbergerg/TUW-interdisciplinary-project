@@ -12,6 +12,7 @@ dependencies = [
     "scipy>=1.16.2",
     "simpleitk>=2.5.2",
     "totalsegmentator>=2.11.0",
+    "trimesh>=4.8.3",
 ]
 
 [tool.uv.sources]
