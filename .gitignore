@@ -12,6 +12,3 @@ wheels/
 .idea
 
 data
-segmentations
-out
-nnUNet_*/

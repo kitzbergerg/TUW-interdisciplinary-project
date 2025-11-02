@@ -1,66 +1,72 @@
 import SimpleITK as sitk
 import os
-from glob import glob
+import argparse
+from preprocessing_utils import crop_to_label_bbox  # Import the new util function
 
-# --- !! UPDATE THESE PATHS !! ---
-# Path to your original 100 samples
-original_data_dir = "out/"
-# Path to your nnU-Net task directory
-nnunet_task_dir = "nnUNet_raw/Dataset101_FemurRefine/"
-# --------------------------------
 
-imagesTr_dir = os.path.join(nnunet_task_dir, "imagesTr")
-labelsTr_dir = os.path.join(nnunet_task_dir, "labelsTr")
+def prepare_training_data(original_data_dir, nnunet_task_dir):
+    """
+    Prepares training data for nnU-Net by resampling to the high-res
+    label's grid and then cropping to the label's bounding box.
+    """
+    imagesTr_dir = os.path.join(nnunet_task_dir, "imagesTr")
+    labelsTr_dir = os.path.join(nnunet_task_dir, "labelsTr")
+    os.makedirs(imagesTr_dir, exist_ok=True)
+    os.makedirs(labelsTr_dir, exist_ok=True)
 
-print(f"Starting data preparation for nnU-Net...")
+    print(f"Starting data preparation for nnU-Net...")
 
-# Loop through your samples
-for i in range(1, 102):
-    sample_name = f"femur_{i:03d}"  # e.g., "femur_001"
-    print(f"Processing {sample_name}...")
+    # Assumes 101 samples, from Pat001 to Pat101
+    for i in range(1, 102):
+        sample_name = f"femur_{i:03d}"
+        print(f"Processing {sample_name}...")
 
-    # --- Define file paths ---
-    # 1. The Reference Image (High-Res CT)
-    ct_path = os.path.join(original_data_dir, f"Pat{i:03d}", "ct.nii.gz")
-    # 2. The Moving Image (Low-Res Label)
-    low_res_label_path = os.path.join(original_data_dir, f"Pat{i:03d}", "label_low_res.nii.gz")
-    # 3. The Ground Truth (High-Res Label)
-    high_res_label_path = os.path.join(original_data_dir, f"Pat{i:03d}", "label_high_res.nii.gz")
+        ct_path = os.path.join(original_data_dir, f"Pat{i:03d}", "ct.nii.gz")
+        low_res_label_path = os.path.join(original_data_dir, f"Pat{i:03d}", "label_low_res.nii.gz")
+        high_res_label_path = os.path.join(original_data_dir, f"Pat{i:03d}", "label_high_res.nii.gz")
 
-    # --- Define nnU-Net output paths ---
-    nnunet_ct_out = os.path.join(imagesTr_dir, f"{sample_name}_0000.nii.gz")
-    nnunet_resampled_out = os.path.join(imagesTr_dir, f"{sample_name}_0001.nii.gz")
-    nnunet_label_out = os.path.join(labelsTr_dir, f"{sample_name}.nii.gz")
+        nnunet_ct_out = os.path.join(imagesTr_dir, f"{sample_name}_0000.nii.gz")
+        nnunet_low_res_out = os.path.join(imagesTr_dir, f"{sample_name}_0001.nii.gz")
+        nnunet_label_out = os.path.join(labelsTr_dir, f"{sample_name}.nii.gz")
 
-    # --- Load images ---
-    try:
-        reference_image = sitk.ReadImage(ct_path)
-        moving_image = sitk.ReadImage(low_res_label_path)
-        ground_truth_label = sitk.ReadImage(high_res_label_path)
-    except Exception as e:
-        print(f"  Error loading files for {sample_name}: {e}")
-        continue
+        try:
+            ct_image = sitk.ReadImage(ct_path)
+            low_res_image = sitk.ReadImage(low_res_label_path)
+            ground_truth_label = sitk.ReadImage(high_res_label_path)
+        except Exception as e:
+            print(f"  Error loading files for {sample_name}: {e}")
+            continue
 
-    # --- 1. Resample the low-res label to match the CT grid ---
-    # We use Linear interpolation to get the "blurry" upsampled mask
-    resampled_low_res_mask = sitk.Resample(
-        moving_image,
-        referenceImage=reference_image,
-    )
-
-    # --- 2. Check and resample the high-res label (CRITICAL STEP) ---
-    # Your high-res label MUST also match the CT grid.
-    # We use Nearest Neighbor interpolation because it's a label.
-    if ground_truth_label.GetSize() != reference_image.GetSize():
-        print(f"  WARNING: Resampling ground truth label for {sample_name} to match CT.")
-        ground_truth_label = sitk.Resample(
-            ground_truth_label,
-        referenceImage=reference_image,
+        # --- 1. Resample to High-Res Grid ---
+        resampled_ct = sitk.Resample(
+            ct_image,
+            interpolator=sitk.sitkLinear,
+            referenceImage=ground_truth_label,
+        )
+        resampled_low_res = sitk.Resample(
+            low_res_image,
+            interpolator=sitk.sitkNearestNeighbor,
+            referenceImage=ground_truth_label,
         )
 
-    # --- Save the files in the nnU-Net format ---
-    sitk.WriteImage(reference_image, nnunet_ct_out)
-    sitk.WriteImage(resampled_low_res_mask, nnunet_resampled_out)
-    sitk.WriteImage(ground_truth_label, nnunet_label_out)
+        # --- 2. Crop all resampled images to the label bounding box ---
+        cropped_ct = crop_to_label_bbox(resampled_ct, ground_truth_label)
+        cropped_low_res = crop_to_label_bbox(resampled_low_res, ground_truth_label)
+        cropped_label = crop_to_label_bbox(ground_truth_label, ground_truth_label)
 
-print("Data preparation complete.")
+        # --- 3. Save files ---
+        sitk.WriteImage(cropped_ct, nnunet_ct_out)
+        sitk.WriteImage(cropped_low_res, nnunet_low_res_out)
+        sitk.WriteImage(cropped_label, nnunet_label_out)
+
+    print("Data preparation complete.")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Prepare nnU-Net training data.')
+    parser.add_argument('original_data_dir', type=str, help='Path to original data (e.g., "data/preprocessed/")')
+    parser.add_argument('nnunet_task_dir', type=str,
+                        help='Path to nnU-Net task dir (e.g., "data/nnUNet/raw/Dataset102_FemurRefineV2/")')
+    args = parser.parse_args()
+
+    prepare_training_data(args.original_data_dir, args.nnunet_task_dir)
