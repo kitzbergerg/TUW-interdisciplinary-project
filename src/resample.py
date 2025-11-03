@@ -1,6 +1,5 @@
 import argparse
 import SimpleITK as sitk
-import numpy as np
 
 
 def resample_data(itk_image, zoom_factor):

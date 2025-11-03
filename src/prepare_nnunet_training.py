@@ -1,3 +1,6 @@
+import io
+import json
+
 import argparse
 import SimpleITK as sitk
 import os
@@ -7,13 +10,13 @@ import nibabel as nib
 from utils.preprocessing_utils import crop_to_label_bbox, convert_nrrd, convert_stl
 
 
-def prepare_and_convert_data(subjects_dir, nnunet_task_dir):
+def prepare_and_convert_data(subjects_dir, nnunet_dataset_dir):
     """
     Converts, resamples, and crops data from the original subjects
     directory directly into the nnU-Net task directory.
     """
-    imagesTr_dir = os.path.join(nnunet_task_dir, "imagesTr")
-    labelsTr_dir = os.path.join(nnunet_task_dir, "labelsTr")
+    imagesTr_dir = os.path.join(nnunet_dataset_dir, "imagesTr")
+    labelsTr_dir = os.path.join(nnunet_dataset_dir, "labelsTr")
     os.makedirs(imagesTr_dir, exist_ok=True)
     os.makedirs(labelsTr_dir, exist_ok=True)
 
@@ -95,6 +98,23 @@ def prepare_and_convert_data(subjects_dir, nnunet_task_dir):
                 print("  Skipping this subject.")
                 continue
 
+    # --- 6. Create dataset.json file ---
+    with io.open(os.path.join(nnunet_dataset_dir, "dataset.json"), "w") as f:
+        json.dump({
+            "dataset_name": "FemurRefine",
+            "channel_names": {
+                "0": "CT",
+                "1": "low_res_segmentation"
+            },
+            "labels": {
+                "background": 0,
+                "femur": 1
+            },
+            "numTraining": len(subject_names),
+            "file_ending": ".nii.gz",
+            "overwrite_image_reader_writer": "SimpleITKIO"
+        }, f, indent=4)
+
     print("Data preparation complete.")
 
 
@@ -104,8 +124,8 @@ if __name__ == '__main__':
     )
     parser.add_argument('subjects_dir', type=str,
                         help='Path to original subjects data (e.g., "data/raw/HFValid_Collection_v3/Subjects/")')
-    parser.add_argument('nnunet_task_dir', type=str,
+    parser.add_argument('nnunet_dataset_dir', type=str,
                         help='Path to nnU-Net dataset dir (e.g., "data/nnUNet/raw/Dataset103_FemurRefine/")')
     args = parser.parse_args()
 
-    prepare_and_convert_data(args.subjects_dir, args.nnunet_task_dir)
+    prepare_and_convert_data(args.subjects_dir, args.nnunet_dataset_dir)
