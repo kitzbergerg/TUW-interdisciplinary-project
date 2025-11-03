@@ -1,6 +1,7 @@
 import SimpleITK as sitk
 import argparse
-from preprocessing_utils import crop_to_label_bbox
+
+from utils.preprocessing_utils import crop_to_label_bbox
 
 
 def preprocess_for_inference(ct_path, low_res_path, output_ct_path, output_low_res_path):

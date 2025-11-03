@@ -1,4 +1,7 @@
 import SimpleITK as sitk
+import numpy as np
+import trimesh
+import nibabel as nib
 
 
 def crop_to_label_bbox(image_to_crop, label_image, label_val=1, threshold=0.5):
@@ -34,3 +37,22 @@ def crop_to_label_bbox(image_to_crop, label_image, label_val=1, threshold=0.5):
 
     # Crop the *original* input image using the calculated bounding box
     return sitk.RegionOfInterest(image_to_crop, crop_size, crop_index)
+
+
+def convert_nrrd(file_in_path):
+    return sitk.ReadImage(file_in_path, sitk.sitkFloat32)
+
+
+def convert_stl(file_in_path, voxel_size=1.0):
+    mesh = trimesh.load_mesh(file_in_path)
+    voxelized_mesh = mesh.voxelized(pitch=voxel_size)
+    binary_matrix = voxelized_mesh.fill().matrix.astype(np.int8)
+
+    affine_matrix = voxelized_mesh.transform.copy()
+    # Convert LPS to RAS
+    affine_matrix[0, 0] *= -1
+    affine_matrix[1, 1] *= -1
+    affine_matrix[0, 3] *= -1
+    affine_matrix[1, 3] *= -1
+
+    return nib.Nifti1Image(binary_matrix, affine_matrix)

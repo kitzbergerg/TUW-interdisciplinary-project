@@ -4,16 +4,15 @@
 
 Using `uv`:
 
-```nushell
+```sh
 uv venv
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm6.4
 uv sync
 ```
 
 Activate the venv:
 
-```nushell
-use .venv/bin/activate.nu
+```sh
+source .venv/bin/activate
 ```
 
 ## Create directory structure
@@ -34,13 +33,23 @@ mkdir data/nnUNet/results
 Here is a small dataset to play around with: https://doi.org/10.5281/zenodo.10047263
 Put this in `data/raw/`:
 
-```nushell
+```sh
 cd data/raw/
 wget https://zenodo.org/records/10047263/files/Totalsegmentator_dataset_small_v201.zip?download=1
 unzip Totalsegmentator_dataset_small_v201.zip
 ```
 
 You can also use a high-res dataset like: https://amsacta.unibo.it/id/eprint/8431/
+
+
+```sh
+cd data/raw/
+wget https://amsacta.unibo.it/id/eprint/8431/31/HFValid_Collection_v3.zip
+unzip HFValid_Collection_v3.zip
+
+cd HFValid_Collection_v3
+unzip Subjects
+```
 
 ## View data
 
@@ -52,7 +61,7 @@ You can also use [3D Slicer](https://www.slicer.org/) to view the nii files dire
 
 ## Smoothing
 
-```nushell
+```sh
 python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_high_res.nii.gz -v 0.75
 python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_low_res.nii.gz -v 1.5
 python src/resample.py data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled.nii.gz -z 2
@@ -65,41 +74,33 @@ python src/refining/smoothing.py data/preprocessed/upsampled.nii.gz data/preproc
 
 First generate the data:
 
-```nushell
-ls data/raw/HFValid_Collection_v3/Subjects/ | get name | each {path parse} | each {|el| (
-    mkdir ("data/preprocessed/" + $el.stem);
-    python src/conversion.py ($el.parent + "/" + $el.stem + "/" + $el.stem + ".nrrd") ("data/preprocessed/" + $el.stem + "/ct.nii.gz");
-    python src/conversion.py ($el.parent + "/" + $el.stem + "/" + $el.stem + ".stl") ("data/preprocessed/" + $el.stem + "/label_low_res.nii.gz") -v 1.5;
-    python src/conversion.py ($el.parent + "/" + $el.stem + "/" + $el.stem + ".stl") ("data/preprocessed/" + $el.stem + "/label_high_res.nii.gz") -v 0.75;
-)}
-
-mkdir data/nnUNet/raw/Dataset102_FemurRefineV2/
-python src/nnUNet/prepare_inputs.py data/preprocessed/ data/nnUNet/raw/Dataset102_FemurRefineV2/
+```sh
+python src/nnUNet/prepare_inputs.py data/raw/HFValid_Collection_v3/Subjects/ data/nnUNet/raw/Dataset103_FemurRefine/
 ```
 
 Set environment variables:
 
-```nushell
-$env.nnUNet_raw = "data/nnUNet/raw"
-$env.nnUNet_preprocessed = "data/nnUNet/preprocessed"
-$env.nnUNet_results = "data/nnUNet/results"
+```sh
+nnUNet_raw="data/nnUNet/raw"
+nnUNet_preprocessed="data/nnUNet/preprocessed"
+nnUNet_results="data/nnUNet/results"
 ```
 
 Run preprocessing:
 
-```nushell
+```sh
 nnUNetv2_plan_and_preprocess -d 102 --verify_dataset_integrity
 ```
 
 ### Training
 
-```nushell
+```sh
 nnUNet_compile="False" nnUNetv2_train 102 3d_fullres 0
 ```
 
 ### Inference
 
-```nushell
+```sh
 nnUNetv2_predict -i nnUNet_test/ -o nnUNet_predict/ -d 102 -c 3d_fullres -f 0 -chk checkpoint_best.pth
 ```
 
@@ -111,7 +112,7 @@ Using the Segment Comparison model you can compute the Dice Similarity.
 In code, you can do the following.  
 Note that the stl->nifti conversion uses voxel spacing 0.5 by default.
 
-```nushell
+```sh
 python src/compare.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_high_res.nii.gz data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled.nii.gz data/preprocessed/smoothed.nii.gz
 ```
 
@@ -119,7 +120,7 @@ For more detailed comparison, you can use '-v 0.3' to change spacing:
 
 # TotalSegmentator
 
-```nushell
+```sh
 python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.nrrd data/segmentations/ct.nii.gz
 TotalSegmentator -i data/segmentations/ct.nii.gz -o data/segmentations/ -p -rs femur_left -rs femur_right
 

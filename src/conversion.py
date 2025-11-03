@@ -1,28 +1,8 @@
 import argparse
 import SimpleITK as sitk
-import numpy as np
-import trimesh
 import nibabel as nib
 
-
-def convert_nrrd(file_in_path):
-    return sitk.ReadImage(file_in_path, sitk.sitkFloat32)
-
-
-def convert_stl(file_in_path, voxel_size=1.0):
-    mesh = trimesh.load_mesh(file_in_path)
-    voxelized_mesh = mesh.voxelized(pitch=voxel_size)
-    binary_matrix = voxelized_mesh.fill().matrix.astype(np.int8)
-
-    affine_matrix = voxelized_mesh.transform.copy()
-    # Convert LPS to RAS
-    affine_matrix[0, 0] *= -1
-    affine_matrix[1, 1] *= -1
-    affine_matrix[0, 3] *= -1
-    affine_matrix[1, 3] *= -1
-
-    return nib.Nifti1Image(binary_matrix, affine_matrix)
-
+from utils.preprocessing_utils import convert_stl, convert_nrrd
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
