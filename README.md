@@ -24,8 +24,6 @@ mkdir data/preprocessed
 mkdir data/segmentations
 mkdir data/nnUNet
 mkdir data/nnUNet/raw
-mkdir data/nnUNet/preprocessed
-mkdir data/nnUNet/results
 ```
 
 ## Download data
@@ -54,8 +52,6 @@ unzip Subjects
 
 You can also use [3D Slicer](https://www.slicer.org/) to view the nii files directly.
 
-`find_center` and `view_nii` are no longer used, but are kept for reference.
-
 # Refine
 
 ## Smoothing
@@ -63,8 +59,14 @@ You can also use [3D Slicer](https://www.slicer.org/) to view the nii files dire
 ```sh
 python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_high_res.nii.gz -v 0.75
 python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_low_res.nii.gz -v 1.5
+
+python src/resample.py data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled_bspline.nii.gz -z 2 --use-bspline
+python src/smoothing.py data/preprocessed/upsampled_bspline.nii.gz data/preprocessed/upsampled_bspline.nii.gz -s 0
+
 python src/resample.py data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled.nii.gz -z 2
-python src/refining/smoothing.py data/preprocessed/upsampled.nii.gz data/preprocessed/smoothed.nii.gz -s 3
+python src/smoothing.py data/preprocessed/upsampled.nii.gz data/preprocessed/smoothed.nii.gz -s 3
+
+python src/compare.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled_bspline.nii.gz data/preprocessed/smoothed.nii.gz data/preprocessed/label_high_res.nii.gz -v 0.3
 ```
 
 ## nnUNet
@@ -74,7 +76,7 @@ python src/refining/smoothing.py data/preprocessed/upsampled.nii.gz data/preproc
 First generate the data:
 
 ```sh
-python src/prepare_nnunet_training.py data/raw/HFValid_Collection_v3/Subjects/ data/nnUNet/raw/Dataset103_FemurRefine/
+python src/prepare_nnunet_training.py data/raw/HFValid_Collection_v3/Subjects/ data/nnUNet/raw/ data/nnUNet/validation/ --dataset-id 101 --dataset-name FemurRefine --seed 644501148679811808
 ```
 
 Set environment variables:
@@ -110,8 +112,8 @@ python src/conversion.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.n
 TotalSegmentator -i data/segmentations/ct.nii.gz -o data/segmentations/ -p -rs femur_left -rs femur_right
 
 python src/resample.py data/segmentations/femur_right.nii.gz data/segmentations/femur_right_resampled.nii.gz -z 2
-python src/prepare_nnunet_predict.py data/segmentations/ct.nii.gz data/segmentations/femur_right_resampled.nii.gz data/nnUNet/test/femur_001_0000.nii.gz data/nnUNet/test/femur_001_0001.nii.gz
-nnUNetv2_predict -i data/nnUNet/test/ -o data/nnUNet/predictions/ -d 101 -c 3d_fullres -f 0 -chk checkpoint_best.pth
+python src/prepare_nnunet_predict.py data/segmentations/ct.nii.gz data/segmentations/femur_right_resampled.nii.gz data/nnUNet/validation/femur_001_0000.nii.gz data/nnUNet/validation/femur_001_0001.nii.gz
+nnUNetv2_predict -i data/nnUNet/validation/ -o data/nnUNet/validation/outputs/ -d 101 -c 3d_fullres -f 0 -chk checkpoint_best.pth
 ```
 
 # Comparison/Evaluation
@@ -119,11 +121,11 @@ nnUNetv2_predict -i data/nnUNet/test/ -o data/nnUNet/predictions/ -d 101 -c 3d_f
 To compare segmentations you can use the SlicerRT extension for 3D Slicer.  
 Using the Segment Comparison model you can compute the Dice Similarity.
 
-In code, you can do the following.  
-Note that the stl->nifti conversion uses voxel spacing 0.5 by default.
+In code, you can do the following.
 
 ```sh
-python src/compare.py data/raw/HFValid_Collection_v3/Subjects/Pat001/Pat001.stl data/preprocessed/label_high_res.nii.gz data/preprocessed/label_low_res.nii.gz data/preprocessed/upsampled.nii.gz data/preprocessed/smoothed.nii.gz
+python src/compare.py data/raw/HFValid_Collection_v3/Subjects/Pat091/Pat091.stl data/nnUNet/validation/inputs/femur_091_0001.nii.gz data/nnUNet/validation/outputs/femur_091.nii.gz data/nnUNet/validation/labels/femur_091.nii.gz -v 0.3
 ```
 
-For more detailed comparison, you can use '-v 0.3' to change spacing:
+Note that the stl->nifti conversion uses voxel spacing 0.5 by default. Use '-v <float>' to set different spacing.
+

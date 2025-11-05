@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import argparse
 
-from utils.preprocessing_utils import crop_to_label_bbox
+from utils.image_processing import crop_to_label_bbox, read_image
 
 
 def preprocess_for_inference(ct_path, low_res_path, output_ct_path, output_low_res_path):
@@ -10,13 +10,17 @@ def preprocess_for_inference(ct_path, low_res_path, output_ct_path, output_low_r
     This prepares them for nnU-Net inference.
     """
     print("Loading images...")
-    ct_image = sitk.ReadImage(ct_path)
-    low_res_image = sitk.ReadImage(low_res_path)
+    ct_image = read_image(ct_path)
+    low_res_image = read_image(low_res_path)
 
     # Resample the CT to match the low-res mask's grid BEFORE cropping.
     # This ensures both images are aligned.
     print("Resampling CT to match low-res mask grid...")
-    resampled_ct = sitk.Resample(ct_image, referenceImage=low_res_image)
+    resampled_ct = sitk.Resample(
+        ct_image,
+        interpolator=sitk.sitkLinear,
+        referenceImage=low_res_image,
+    )
 
     print("Cropping images to low-res mask bounding box...")
     cropped_ct = crop_to_label_bbox(resampled_ct, low_res_image)

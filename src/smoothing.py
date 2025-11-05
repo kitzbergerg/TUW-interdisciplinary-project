@@ -1,24 +1,15 @@
 import SimpleITK as sitk
 import argparse
-from scipy.ndimage import gaussian_filter
+
+from utils.image_processing import read_image
 
 
 def refine(input_file, output_file, kernel_size):
-    # Load the image using SimpleITK
-    itk_image = sitk.ReadImage(input_file, sitk.sitkFloat32)
-    itk_image_data = sitk.GetArrayFromImage(itk_image)
-
-    # Apply gaussian smoothing
-    blurred = gaussian_filter(itk_image_data, sigma=kernel_size)
-    blurred[blurred <= 0.5] = 0
-    blurred[blurred > 0.5] = 1
-
-    # Convert back to SimpleITK image
-    final_itk_image = sitk.GetImageFromArray(blurred)
-    final_itk_image.CopyInformation(itk_image)
-
-    # Save the final result
-    sitk.WriteImage(final_itk_image, output_file)
+    itk_image = read_image(input_file)
+    if kernel_size > 0:
+        itk_image = sitk.SmoothingRecursiveGaussian(itk_image, kernel_size)
+    itk_image = sitk.BinaryThreshold(itk_image, lowerThreshold=0.5)
+    sitk.WriteImage(itk_image, output_file)
     print(f"Refined segmentation saved to: {output_file}")
 
 

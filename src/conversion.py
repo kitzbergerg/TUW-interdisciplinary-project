@@ -1,8 +1,7 @@
 import argparse
 import SimpleITK as sitk
-import nibabel as nib
 
-from utils.preprocessing_utils import convert_stl, convert_nrrd
+from utils.image_processing import stl_to_nifti, read_image
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -15,13 +14,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.file_in_path.endswith('.stl'):
-        nifti_image = convert_stl(args.file_in_path, args.voxel_size)
-        nib.save(nifti_image, args.file_out_path)
+        stl_to_nifti(args.file_in_path, args.file_out_path, args.voxel_size)
     elif args.file_in_path.endswith('.nrrd'):
-        itk_image = convert_nrrd(args.file_in_path)
-        sitk.WriteImage(itk_image, args.file_out_path)
+        sitk.WriteImage(read_image(args.file_in_path), args.file_out_path)
     else:
         parser.print_help()
-        exit(1)
 
     print("Conversion complete!")
