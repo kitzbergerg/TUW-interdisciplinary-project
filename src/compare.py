@@ -9,12 +9,15 @@ def compare(ground_truth, comparison, voxel_size):
     ground_truth = read_image(ground_truth, voxel_size=voxel_size, data_type=sitk.sitkUInt8)
 
     labelstats = sitk.LabelOverlapMeasuresImageFilter()
+    hausdorff = sitk.HausdorffDistanceImageFilter()
     for file in comparison:
         other_img = read_image(file, voxel_size=voxel_size)
         resampled = sitk.Resample(other_img, interpolator=sitk.sitkLinear, referenceImage=ground_truth)
-        labelstats.Execute(sitk.BinaryThreshold(resampled, lowerThreshold=0.5), ground_truth)
-        print(f"Dice Similarity Coefficient: {labelstats.GetDiceCoefficient():.4f} for {file}")
+        resampled = sitk.BinaryThreshold(resampled, lowerThreshold=0.5)
 
+        labelstats.Execute(resampled, ground_truth)
+        hausdorff.Execute(resampled, ground_truth)
+        print(f"Dice Similarity Coefficient: {labelstats.GetDiceCoefficient():.4f}, Hausdorff Distance: {hausdorff.GetHausdorffDistance():.4f}, File: {file}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare NIfTI files.')
