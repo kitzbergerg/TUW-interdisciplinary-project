@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compare NIfTI files.')
     parser.add_argument('ground_truth', type=str, help='Path to the first file.')
     parser.add_argument('comparison', nargs='+', default=[], help='Paths to other files to compare against.')
-    parser.add_argument('-v', '--voxel_size', type=float, default=0.5, help='Voxel Size for STL to NIfTI conversion.')
+    parser.add_argument('-v', '--voxel_size', type=float, default=0.3, help='Voxel Size for STL to NIfTI conversion.')
     args = parser.parse_args()
 
     compare(args.ground_truth, args.comparison, args.voxel_size)

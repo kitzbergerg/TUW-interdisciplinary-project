@@ -106,7 +106,7 @@ def prepare_and_convert_data(
 
     # --- 2. Calculate subset to process based on percentage ---
     num_train_to_process = int(len(train_indices_full) * data_percentage)
-    random.seed(random_seed)
+    random.seed(random_seed * num_train_to_process)
     train_indices_to_process = random.sample(train_indices_full, num_train_to_process)
     valid_indices_to_process = valid_indices_full
     print(f"Processing {len(train_indices_to_process)} training samples ({data_percentage * 100}%)")
