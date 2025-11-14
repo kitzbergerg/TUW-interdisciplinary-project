@@ -61,3 +61,26 @@ ls $DATA_DIR \
         ' \
     | awk -F ' ' '{count++; dice += $4; hausdorff += $7} END {printf "Avg Dice: %.4f, Avg Hausdorff: %.4f\n",(dice/count),(hausdorff/count)}'
 ```
+
+Get all non-empty segmentations in directory:
+
+```sh
+export PROJECT_DIR=/home/jovyan/InterdisciplinaryProject/
+export DATA_DIR=./
+
+ls $DATA_DIR | grep .nii.gz | xargs -I {} python -c "
+import SimpleITK as sitk
+import numpy as np
+
+img = sitk.ReadImage('$DATA_DIR{}')
+input_array = sitk.GetArrayFromImage(img)
+if not np.all(input_array == 0):
+  print('$DATA_DIR{}')
+" | xargs -I {} bash -c "
+python $PROJECT_DIR/src/resample.py {} ../resampled/{} -z 4
+python $PROJECT_DIR/src/prepare_nnunet_predict.py ../ct_003.nii.gz ../resampled/{} ../in/{}_0000.nii.gz ../in/{}_0001.nii.gz
+"
+
+cd $PROJECT_DIR
+nnUNetv2_predict -i data/segmentations/in/ -o data/segmentations/out/ -d 103 -c 3d_fullres -f 0 -chk checkpoint_best.pth
+```
