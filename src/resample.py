@@ -1,7 +1,27 @@
 import argparse
 import SimpleITK as sitk
 
-from utils.image_processing import resample_image, read_image
+from utils.image_processing import read_image
+
+
+def resample_image(itk_image, upscale_factor, interpolator=sitk.sitkLinear):
+    resampler = sitk.ResampleImageFilter()
+
+    new_size = [int(round(s * upscale_factor)) for s in itk_image.GetSize()]
+    resampler.SetSize(new_size)
+
+    new_spacing = [s / upscale_factor for s in itk_image.GetSpacing()]
+    resampler.SetOutputSpacing(new_spacing)
+
+    resampler.SetInterpolator(interpolator)
+    resampler.SetDefaultPixelValue(0)
+    resampler.SetOutputOrigin(itk_image.GetOrigin())
+    resampler.SetOutputDirection(itk_image.GetDirection())
+
+    # we want probability maps, not intensities
+    resampler.SetOutputPixelType(sitk.sitkFloat32)
+
+    return resampler.Execute(itk_image)
 
 
 def resample(input_file, output_file, upscale_factor, interpolator):

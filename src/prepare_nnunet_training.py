@@ -1,12 +1,13 @@
 import io
 import json
+import math
 import random
 import argparse
 import SimpleITK as sitk
 import os
 import tempfile
 
-from utils.image_processing import crop_to_label_bbox, resample_image, read_image
+from utils.image_processing import read_image
 
 
 def voxel_to_str(voxel_size):
@@ -35,32 +36,37 @@ def convert_data_tuple(
 
     # --- 1. Load files ---
     ct_image = read_image(ct_nrrd_path)
-    low_res_image = read_image(stl_path, voxel_size=voxel_size_original, temp_dir=temp_dir, data_type=sitk.sitkUInt8)
-    ground_truth_label = read_image(stl_path, voxel_size=voxel_size_original / upscale_factor, temp_dir=temp_dir,
-                                    data_type=sitk.sitkUInt8)
+    low_res_image = read_image(
+        stl_path,
+        voxel_size=voxel_size_original,
+        temp_dir=temp_dir,
+        data_type=sitk.sitkFloat32  # Use float so we can use linear for resampling
+    )
+    ground_truth_label = read_image(
+        stl_path,
+        voxel_size=voxel_size_original / upscale_factor,
+        temp_dir=temp_dir,
+        data_type=sitk.sitkUInt8,
+        padding=math.ceil(1.5 * upscale_factor)
+    )
 
     # --- 2. Resample to High-Res Grid ---
-    resampled_low_res = resample_image(low_res_image, upscale_factor)
-    resampled_low_res = sitk.Resample(
-        resampled_low_res,
-        interpolator=sitk.sitkLinear,
-        referenceImage=ground_truth_label,
-    )
     resampled_ct = sitk.Resample(
         ct_image,
         interpolator=sitk.sitkLinear,
-        referenceImage=resampled_low_res,
+        referenceImage=ground_truth_label,
+        defaultPixelValue=-1000  # Use air Hounsfield Unit for outside FOV
+    )
+    resampled_low_res = sitk.Resample(
+        low_res_image,
+        interpolator=sitk.sitkLinear,  # Use linear so model knows about unsure areas
+        referenceImage=ground_truth_label,
     )
 
-    # --- 3. Crop all images to the label bounding box ---
-    cropped_ct = crop_to_label_bbox(resampled_ct, ground_truth_label)
-    cropped_low_res = crop_to_label_bbox(resampled_low_res, ground_truth_label)
-    cropped_label = crop_to_label_bbox(ground_truth_label, ground_truth_label)
-
-    # --- 4. Save final files to nnU-Net directory ---
-    sitk.WriteImage(cropped_ct, nnunet_ct_out)
-    sitk.WriteImage(cropped_low_res, nnunet_low_res_out)
-    sitk.WriteImage(cropped_label, nnunet_label_out)
+    # --- 3. Save final files to nnU-Net directory ---
+    sitk.WriteImage(resampled_ct, nnunet_ct_out)
+    sitk.WriteImage(resampled_low_res, nnunet_low_res_out)
+    sitk.WriteImage(ground_truth_label, nnunet_label_out)
 
 
 def prepare_and_convert_data(

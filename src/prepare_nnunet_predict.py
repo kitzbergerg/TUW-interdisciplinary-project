@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import argparse
 
-from utils.image_processing import crop_to_label_bbox, read_image
+from utils.image_processing import read_image
 
 
 def preprocess_for_inference(ct_path, low_res_path, output_ct_path, output_low_res_path):
@@ -22,13 +22,9 @@ def preprocess_for_inference(ct_path, low_res_path, output_ct_path, output_low_r
         referenceImage=low_res_image,
     )
 
-    print("Cropping images to low-res mask bounding box...")
-    cropped_ct = crop_to_label_bbox(resampled_ct, low_res_image)
-    cropped_low_res = crop_to_label_bbox(low_res_image, low_res_image)
-
     # Save to specified output paths
-    sitk.WriteImage(cropped_ct, output_ct_path)
-    sitk.WriteImage(cropped_low_res, output_low_res_path)
+    sitk.WriteImage(resampled_ct, output_ct_path)
+    sitk.WriteImage(low_res_image, output_low_res_path)
     print(f"Cropped CT saved to: {output_ct_path}")
     print(f"Cropped low-res mask saved to: {output_low_res_path}")
 
