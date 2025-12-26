@@ -154,6 +154,18 @@ Run training
 nnUNetv2_train 101 3d_fullres 0
 ```
 
+#### Deployment
+
+Follow the steps described [here](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/how_to_use_nnunet.md#how-to-deploy-and-run-inference-with-your-pretrained-models).  
+In short:
+
+```sh
+# Package to zip
+nnUNetv2_export_model_to_zip -d <dataset_id> -c 3d_fullres -f 0 -chk checkpoint_best.pth --not_strict
+# Unpack at target
+nnUNetv2_install_pretrained_model_from_zip <zip file>
+```
+
 ## Comparison/Evaluation
 
 To compare segmentations you can use the SlicerRT extension for 3D Slicer.  
